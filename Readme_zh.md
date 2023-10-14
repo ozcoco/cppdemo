@@ -1,6 +1,3 @@
-# cpp_feature_demo
-
-#### 介绍
 # C++编程
 
 ------
@@ -1769,12 +1766,463 @@ Process finished with exit code 0
 
 
 
+### tuple&pair&遍历
 
-#### 特技
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+#include <iostream>
+#include <tuple>
+#include <vector>
+#include <string>
+#include <functional>
+
+template<typename T>
+constexpr void print(T t) {
+  std::cout << t << std::endl;
+}
+
+template<typename F, typename... T>
+constexpr void print(F f, T ...t) {
+  std::cout << f << std::endl;
+  std::cout << sizeof...(t) << std::endl;
+  printf(t...);
+}
+
+template<typename T>
+constexpr void print_tuple(T t) {
+  std::cout << typeid(t).name() << "\tt" << "=" << t << std::endl;
+}
+
+template<typename Tuple, size_t N>
+struct foreach_tuple {
+
+  constexpr static void print(const Tuple &t) {
+    print_tuple(std::get<N - 1>(t));
+    foreach_tuple<Tuple, N - 1>::print(t);
+  }
+
+};
+
+template<typename Tuple>
+struct foreach_tuple<Tuple, 1> {
+
+  constexpr static void print(const Tuple &t) {
+    print_tuple(std::get<0>(t));
+  }
+
+};
+
+int main() {
+
+  std::pair<std::string, std::vector<std::string>> p1{"a", {"a1", "a2"}};
+  const auto [x, y] = p1;
+  const auto &[f, s] = p1;
+  printf("{&x=%p, &y=%p}\n", &x, &y);
+  printf("{&f=%p, &s=%p}\n", &f, &s);
+  printf("{&p1.first=%p, &p1.second=%p}\n", &p1.first, &p1.second);
+
+
+  std::tuple<int, bool, float, std::string> t1;
+  t1 = std::make_tuple(1, false, 0.5f, "abc");
+  std::tuple<int, bool, float, std::string> t2;
+  t2 = std::make_tuple(2, false, 1.5f, "def");
+  std::cout << std::tuple_size<decltype(t1)>::value << std::endl;
+
+  foreach_tuple<decltype(t1), std::tuple_size<decltype(t1)>::value>::print(t1);
+  foreach_tuple<decltype(t2), std::tuple_size<decltype(t2)>::value>::print(t2);
+
+}
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\tuple\test-tuple.exe
+{&x=0000004542fff6c0, &y=0000004542fff6e0}
+{&f=0000004542fff700, &s=0000004542fff720}
+{&p1.first=0000004542fff700, &p1.second=0000004542fff720}
+4
+NSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE    t=abc
+f       t=0.5
+b       t=0
+i       t=1
+NSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE    t=def
+f       t=1.5
+b       t=0
+i       t=2
+
+Process finished with exit code 0
+
+```
+
+
+
+### thread
+
+#### jthread
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <coroutine>
+
+int main() {
+
+  std::jthread{[](const int &arg) {
+
+    printf("arg=%d\n", arg);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    printf("child thread exit\n");
+
+  }, 1};  //自动join
+
+  std::thread{[](const int &arg) {
+
+    printf("arg=%d\n", arg);
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    printf("child thread exit\n");
+
+  }, 1};  //若无主动join或detach，则会报异常
+
+
+  printf("main thread exit\n");
+
+}
+```
+
+
+
+#### mutex& condition_variable
+
+##### 生产者和消费者
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <thread>
+#include <condition_variable>
+
+static std::mutex g_iMutex{};
+static std::condition_variable g_iConditionVar{};
+
+static long count = 0;
+
+int main() {
+
+  std::thread t1{[&]() {
+
+    for (;;) {
+
+      std::unique_lock lock{g_iMutex};
+      count += 3;
+      std::cout << "count += 3\n";
+
+      g_iConditionVar.notify_one();
+
+    }
+
+  }};
+
+  std::thread t2{[&]() {
+
+    for (;;) {
+
+      std::unique_lock lock{g_iMutex};
+
+      if (count < 5)
+        g_iConditionVar.wait(lock);
+
+      count -= 2;
+      std::cout << "count =" << count << "\n";
+
+    }
+
+  }};
+
+  t2.join();
+  t1.join();
+
+}
+```
+
+
+
+
+
+### union&std::variant
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <variant>
+#include <string>
+
+union Variant {
+  char c;
+  int n;
+  double d;
+};
+
+//可变数据类型，共享内存，同一时间只存在一种数据类型
+static void union_feature() {
+
+  Variant v{};
+  v.d = 0.4;
+  std::cout << "sizeof(v)=" << sizeof v << std::endl;
+  std::cout << "v.c=" << v.c << std::endl;
+  std::cout << "v.n=" << v.n << std::endl;
+  std::cout << "v.d=" << v.d << std::endl;
+
+  v.c = 'a';
+  std::cout << "v.c=" << v.c << std::endl;
+
+  v.n = 54321;
+  std::cout << "v.c=" << v.n << std::endl;
+
+}
+
+//可变数据类型
+static void variant_feature() {
+
+  try {
+
+    static std::variant<char, int, double, float, bool, std::string> v{false};
+    std::cout << "sizeof v = " << sizeof v << std::endl;
+    v = "abc";
+    std::cout << "v = " << get<std::string>(v) << std::endl;
+    v = true;
+    std::cout << "v = " << get<bool>(v) << std::endl;
+    v = 0.33f;
+    std::cout << "v = " << get<float>(v) << std::endl;
+    v = 0.123;
+    std::cout << "v = " << get<double>(v) << std::endl;
+    v = 123;
+    std::cout << "v = " << get<int>(v) << std::endl;
+    v = 'a';
+    std::cout << "v = " << get<char>(v) << std::endl;
+
+    auto fnVariantPrint = [](auto &v)constexpr {
+
+      if (auto *pV = std::get_if<std::string>(&v))
+        std::cout << typeid(*pV).name() << " v = " << *pV << std::endl;
+
+      if (auto *pV = std::get_if<bool>(&v))
+        std::cout << typeid(*pV).name() << " v = " << *pV << std::endl;
+
+      if (auto *pV = std::get_if<float>(&v))
+        std::cout << typeid(*pV).name() << " v = " << *pV << std::endl;
+
+      if (auto *pV = std::get_if<double>(&v))
+        std::cout << typeid(*pV).name() << " v = " << *pV << std::endl;
+
+      if (auto *pV = std::get_if<int>(&v))
+        std::cout << typeid(*pV).name() << " v = " << *pV << std::endl;
+
+      if (auto *pV = std::get_if<char>(&v))
+        std::cout << typeid(*pV).name() << " v = " << *pV << std::endl;
+
+    };
+
+    v = 'x';
+    fnVariantPrint(v);
+
+  } catch (const std::bad_variant_access &e) {
+
+    std::cout << e.what() << std::endl;
+
+  }
+
+}
+
+int main() {
+
+  union_feature();
+
+  std::cout << "\n-------------------------------------------------------\n" << std::endl;
+
+  variant_feature();
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\variant\test-variant.exe
+sizeof(v)=8
+v.c=
+v.n=-1717986918
+v.d=0.4
+v.c=a
+v.c=54321
+
+-------------------------------------------------------
+
+sizeof v = 40
+v = abc
+v = 1
+v = 0.33
+v = 0.123
+v = 123
+v = a
+c v = x
+
+Process finished with exit code 0
+
+```
+
+
+
+### tie&结构化绑定&map遍历
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <tuple>
+#include <string>
+#include <array>
+#include <map>
+
+int main() {
+
+  std::tuple<char, int, double, float, bool, std::string> t{'a', 123, 0.123, 0.123f, false, "123"};
+  std::cout << "get type-----------------------------------------" << std::endl;
+  std::cout << get<std::string>(t) << std::endl;
+  std::cout << get<bool>(t) << std::endl;
+  std::cout << get<float>(t) << std::endl;
+  std::cout << get<double>(t) << std::endl;
+  std::cout << get<int>(t) << std::endl;
+  std::cout << get<char>(t) << std::endl;
+  std::cout << "get index-----------------------------------------" << std::endl;
+  std::cout << get<0>(t) << std::endl;
+  std::cout << get<1>(t) << std::endl;
+  std::cout << get<2>(t) << std::endl;
+  std::cout << get<3>(t) << std::endl;
+  std::cout << get<4>(t) << std::endl;
+  std::cout << get<5>(t) << std::endl;
+
+  {
+    std::cout << "get tie-----------------------------------------" << std::endl;
+    char c;
+    int n;
+    double d;
+    float f;
+    bool b;
+    std::string s;
+    std::tie(c, n, d, f, b, s) = t;
+    std::cout << c << std::endl;
+    std::cout << n << std::endl;
+    std::cout << d << std::endl;
+    std::cout << f << std::endl;
+    std::cout << b << std::endl;
+    std::cout << s << std::endl;
+  }
+
+  {
+    std::cout << "get struct binding-----------------------------------------" << std::endl;
+    auto &[c, n, d, f, b, s] = t;
+    std::cout << c << std::endl;
+    std::cout << n << std::endl;
+    std::cout << d << std::endl;
+    std::cout << f << std::endl;
+    std::cout << b << std::endl;
+    std::cout << s << std::endl;
+  }
+
+  {
+    std::cout << "get tie-----------------------------------------" << std::endl;
+    std::pair<char, int> p{'a', 123};
+    char c;
+    int n;
+    std::tie(c, n) = p;
+    std::cout << c << std::endl;
+    std::cout << n << std::endl;
+  }
+
+  {
+    std::cout << "get struct binding-----------------------------------------" << std::endl;
+    std::pair<char, int> p{'a', 123};
+    auto &[c, n] = p;
+    std::cout << c << std::endl;
+    std::cout << n << std::endl;
+  }
+
+  {
+    std::cout << "get struct binding it map-----------------------------------------" << std::endl;
+    std::map<int, std::string> m{
+        {1, "123"}, {2, "456"}
+    };
+    printf("std::map<int, std::string>::value_type is std::pair<>\n");
+
+    for (auto &[k, v] : m) {
+      printf("{%d, %s}\n", k, v.c_str());
+    }
+  }
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\tie\test-tie.exe
+get type-----------------------------------------
+123
+0
+0.123
+0.123
+123
+a
+get index-----------------------------------------
+a
+123
+0.123
+0.123
+0
+123
+get tie-----------------------------------------
+a
+123
+0.123
+0.123
+0
+123
+get struct binding-----------------------------------------
+a
+123
+0.123
+0.123
+0
+123
+get tie-----------------------------------------
+a
+123
+get struct binding-----------------------------------------
+a
+123
+get struct binding it map-----------------------------------------
+std::map<int, std::string>::value_type is std::pair<>
+{1, 123}
+{2, 456}
+
+Process finished with exit code 0
+
+```
+
