@@ -375,8 +375,6 @@ info: 0
 ----------------------------------------------------
 ```
 
-
-
 ## Reference&Object&Pointer
 
 ```c++
@@ -553,18 +551,13 @@ flag_: 3 price_: 200 vendor_: 惠普 desc_: 惠普笔记本电脑
 flag_: 1 price_: 35 vendor_: 机械师 desc_: 机械师笔记本电脑 input_: 4245949552
 
 Process finished with exit code 0
-
 ```
-
-
 
 ## nullptr
 
 ```c++
 
 ```
-
-
 
 # C++20
 
@@ -701,8 +694,6 @@ void ranges::test_ranges()
    ranges_basic();
 }
 ```
-
-
 
 # Feature
 
@@ -846,10 +837,7 @@ ap7=000000b4d81ffd7c
 ------------------------------------------------
 
 Process finished with exit code 0
-
 ```
-
-
 
 ### pointer
 
@@ -957,10 +945,7 @@ D:\WK\cpp\cpp_feature_demo\cmake-build-debug\pointer\test-pointer.exe
 ---------------------------------------
 
 Process finished with exit code 0
-
 ```
-
-
 
 ### rvalue（右值）
 
@@ -1070,10 +1055,7 @@ D:\WK\cpp\cpp_feature_demo\cmake-build-debug\rvalue\test-rvalue.exe
 1--->deinit
 
 Process finished with exit code 0
-
 ```
-
-
 
 ### 如何解决宏定义冲突问题？
 
@@ -1120,10 +1102,7 @@ v=1
 v2=1
 
 Process finished with exit code 0
-
 ```
-
-
 
 ### 如何在main函数前执行代码？
 
@@ -1273,10 +1252,7 @@ flag_: 9
 9--->virtual ~Feature()
 flag_:
 Process finished with exit code -1073741819 (0xC0000005)
-
 ```
-
-
 
 ### 智能指针
 
@@ -1482,10 +1458,7 @@ reset_shared_ptr exit
 11--->deinit
 
 Process finished with exit code 0
-
 ```
-
-
 
 #### unique_ptr
 
@@ -1637,8 +1610,6 @@ int main() {
 }
 ```
 
-
-
 #### weak_ptr
 
 ```c++
@@ -1761,10 +1732,7 @@ wp use_count=0
 gw is expired
 
 Process finished with exit code 0
-
 ```
-
-
 
 ### tuple&pair&遍历
 
@@ -1853,10 +1821,7 @@ b       t=0
 i       t=2
 
 Process finished with exit code 0
-
 ```
-
-
 
 ### thread
 
@@ -1899,8 +1864,6 @@ int main() {
 
 }
 ```
-
-
 
 #### mutex& condition_variable
 
@@ -1957,10 +1920,6 @@ int main() {
 
 }
 ```
-
-
-
-
 
 ### union&std::variant
 
@@ -2083,10 +2042,7 @@ v = a
 c v = x
 
 Process finished with exit code 0
-
 ```
-
-
 
 ### tie&结构化绑定&map遍历
 
@@ -2223,6 +2179,100 @@ std::map<int, std::string>::value_type is std::pair<>
 {2, 456}
 
 Process finished with exit code 0
-
 ```
+
+concepts （概念）
+
+> concept定义概念
+> requires定义约束
+>  可约束模板参数
+>  可约束函数行为
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+#include <concepts>
+
+/*
+ * concept定义概念
+ * requires定义约束
+ *    可约束模板参数
+ *    可约束函数行为
+ *
+ * */
+template<typename T, typename U>
+concept Addable1 = std::is_same_v<T, int> && std::is_same_v<U, int> /*定义类型约束*/
+    && requires(T t, U u){
+      t + u; /*定义行为约束*/
+      { t + u } -> std::same_as<int>;  //约束行为的结果
+    };
+
+template<typename T, typename U>
+concept Addable2 = requires(T t, U u){
+  requires std::is_same_v<T, int>; /*定义类型约束*/
+  requires std::is_same_v<U, int>;
+  t + u; /*定义行为约束*/
+  { t + u } -> std::same_as<int>;  //约束行为的结果
+};
+
+template<typename T, typename U>
+requires Addable1<T, U>
+auto add(T t, U u) {
+  return t + u;
+}
+
+template<typename T, typename U>
+auto add2(T t, U u) requires Addable1<T, U> {
+  return t + u;
+}
+
+template<typename T, typename U>
+requires std::is_same_v<T, int> && std::is_same_v<U, int> /*定义类型约束*/
+    && requires(T t, U u){
+      t + u; /*定义行为约束*/
+      { t + u } -> std::same_as<int>;  //约束行为的结果
+    }
+auto add3(T t, U u) {
+  return t + u;
+}
+
+template<typename T, typename U>
+auto add5(T t, U u) requires Addable2<T, U> {
+  return t + u;
+}
+
+template<typename T>
+concept Inter1= std::is_same<T, int>::value;
+
+Inter1 auto add4(Inter1 auto t, Inter1 auto u) {
+  return t + u;
+}
+
+auto add(...) {
+  return 0;
+}
+
+int main() {
+
+  std::cout << add(1, 0) << std::endl;
+  std::cout << add(0.4, 0) << std::endl;
+  std::cout << add("0.4", "0") << std::endl;
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\concept\test-concept.exe
+1
+0
+0
+
+Process finished with exit code 0
+```
+
 
