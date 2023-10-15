@@ -2181,12 +2181,12 @@ std::map<int, std::string>::value_type is std::pair<>
 Process finished with exit code 0
 ```
 
-concepts （概念）
+### concepts （概念）
 
 > concept定义概念
 > requires定义约束
->  可约束模板参数
->  可约束函数行为
+>    可约束模板参数
+>    可约束函数行为
 
 ```c++
 //
@@ -2274,5 +2274,3 @@ D:\WK\cpp\cpp_feature_demo\cmake-build-debug\concept\test-concept.exe
 
 Process finished with exit code 0
 ```
-
-
