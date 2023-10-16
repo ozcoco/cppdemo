@@ -2274,3 +2274,665 @@ D:\WK\cpp\cpp_feature_demo\cmake-build-debug\concept\test-concept.exe
 
 Process finished with exit code 0
 ```
+
+
+
+### std::decay
+
+> std::decay 元函数，用于去除类型修饰符
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+
+/*
+ * std::decay 元函数，用于去除类型修饰符
+ *
+ * */
+
+int main() {
+
+  int a = 1;
+  int &ar = a;
+  int &&b = 2;
+  const int &c = b;
+  std::cout << "a:" << typeid(a).name() << std::endl;
+  std::cout << "ar:" << typeid(ar).name() << std::endl;
+  std::cout << "b:" << typeid(b).name() << std::endl;
+  std::cout << "c:" << typeid(c).name() << std::endl;
+
+  std::cout << "c: = a:" << std::is_same_v<decltype(c), decltype(a)> << std::endl;
+  using Tc = std::decay<decltype(c)>::type; //去除类型修饰符
+  using Tc2 = std::decay_t<decltype(c)>;
+  std::cout << "c: = a:" << std::is_same_v<Tc, decltype(a)> << std::endl;
+  std::cout << "c: = a:" << std::is_same_v<Tc2, decltype(a)> << std::endl;
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\decay_t\test-decay_t.exe
+a:i
+ar:i
+b:i
+c:i
+c: = a:0
+c: = a:1
+c: = a:1
+
+Process finished with exit code 0
+
+```
+
+
+
+### std::any
+
+> 任意数据类型（泛型数据）
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <any>
+#include <string>
+#include <vector>
+#include <variant>
+
+using namespace std::literals::string_literals;
+
+template<typename T>
+struct Any {
+
+  using value_type = T;
+
+  constexpr Any(const T &&t) : _t_(t) {}
+
+  constexpr operator T() {
+    return _t_;
+  }
+
+  value_type _t_;
+};
+
+int main() {
+
+  std::any a = 123;
+  std::cout << "int size:" << sizeof(int) << std::endl;
+  std::cout << "a size:" << sizeof a << std::endl;
+  std::cout << "std::any size:" << sizeof(std::any) << std::endl;
+  std::variant<bool, char, unsigned char, int, unsigned int, long int, unsigned long int, std::string, Any<int>>
+      i1 = 123;
+  std::cout << "i1 size:" << sizeof(i1) << std::endl;
+  std::cout << "std::variant<int> size:" << sizeof(decltype(i1)) << std::endl;
+  std::cout << "a:" << typeid(a).name() << std::endl;
+  std::cout << "a:" << a.type().name() << std::endl;
+  std::cout << "a =" << std::any_cast<int>(a) << std::endl;
+
+  Any y1 = 123;
+  Any s1 = std::string{"123"};
+
+  int yy1 = y1;
+  std::string ss1 = s1;
+  std::cout << "yy1 =" << yy1 << std::endl;
+
+  std::vector<std::any> vec{false, 'a', 0.1f, 0.123, 2, 3U, 4L, 5UL, "12345"s};
+  for (auto &&e : vec) {
+
+    if (auto *p = std::any_cast<bool>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<char>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<float>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<double>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<int>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<unsigned int>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<long int>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<unsigned long int>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+    if (auto *p = std::any_cast<std::string>(&e))
+      std::cout << typeid(std::remove_pointer_t<decltype(p)>).name() << " v =" << *p << std::endl;
+
+  }
+
+}
+
+
+
+
+#####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\any\test-any.exe
+int size:4
+a size:16
+std::any size:16
+i1 size:40
+std::variant<int> size:40
+a:St3any
+a:i
+a =123
+yy1 =123
+b v =0
+c v =a
+f v =0.1
+d v =0.123
+i v =2
+j v =3
+l v =4
+m v =5
+NSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE v =12345
+
+Process finished with exit code 0
+
+```
+
+
+
+### std::visit
+
+> 高效访问std::variant
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+#include <variant>
+#include <string>
+#include <string_view>
+#include <sstream>
+
+using namespace std::literals::string_literals;
+
+template<class>
+inline static constexpr bool always_false_v = false;
+
+struct Visitor {
+  inline void operator()(bool v) const {
+    std::cout << "bool v = " << v << std::endl;
+  }
+  inline void operator()(char v) const {
+    std::cout << "char v = " << v << std::endl;
+  }
+  inline void operator()(int v) const {
+    std::cout << "int v = " << v << std::endl;
+  }
+  inline void operator()(double v) const {
+    std::cout << "double v = " << v << std::endl;
+  }
+  inline void operator()(float v) const {
+    std::cout << "float v = " << v << std::endl;
+  }
+  inline void operator()(std::string &v) const {
+    std::cout << "std::string v = " << v << std::endl;
+  }
+  inline void operator()(auto &&v) const {
+    static_assert(always_false_v<decltype(v)>, "non-exhaustive visitor!");
+  }
+
+};
+
+static void visit_feature() {
+
+  std::variant<bool, char, int, double, float, std::string> v{};
+  v = "abcdef"s;
+  std::visit(Visitor{}, v);
+
+  v = 0.01f;
+
+  std::visit([](auto &&v) {
+
+    using T = std::decay_t<decltype(v)>;
+
+    if constexpr (std::is_same_v<T, bool>)
+      std::cout << "bool v = " << v << std::endl;
+    else if constexpr (std::is_same_v<T, char>)
+      std::cout << "char v = " << v << std::endl;
+    else if constexpr (std::is_same_v<T, int>)
+      std::cout << "int v = " << v << std::endl;
+    else if constexpr (std::is_same_v<T, float>)
+      std::cout << "float v = " << v << std::endl;
+    else if constexpr (std::is_same_v<T, double>)
+      std::cout << "double v = " << v << std::endl;
+    else if constexpr (std::is_same_v<T, std::string>)
+      std::cout << "std::string v = " << v << std::endl;
+    else
+      static_assert(always_false_v<decltype(v)>, "non-exhaustive visitor!");
+
+  }, v);
+
+}
+
+int main() {
+
+  visit_feature();
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\visit\test-visit.exe
+std::string v = abcdef
+float v = 0.01
+
+Process finished with exit code 0
+
+```
+
+
+
+
+
+### strong enum
+
+> 强类型enum不会隐式转换为int
+>
+> 强类型enum默认无法开放式访问，需要使用using enum解开访问
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+
+enum A {
+  A1 = 100, A2, A3
+};
+
+//强类型enum不会隐式转换为int
+enum class B {
+  B1 = 10000, B2, B3
+};
+
+int main() {
+
+  int a = A1;
+//  int b = B::B1; //error, 编译失败
+
+  std::cout << A1 << std::endl;
+
+  {
+    using enum B; //c++20强类型enum特性
+    std::cout << static_cast<int>(B1) << std::endl;
+  }
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\strong_enum\test-strong_enum.exe
+100
+10000
+
+Process finished with exit code 0
+
+```
+
+
+
+### string_view
+
+> string_view可减少字符串复制
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <string>
+#include <string_view>
+
+//string_view可减少字符串复制
+
+int main() {
+
+  std::string s{"abcdefghijk"};
+  std::string s1 = s;
+  std::string s2 = s;
+  printf("s.data() = %p\n", s.data());
+  printf("s1.data() = %p\n", s1.data());
+  printf("s2.data() = %p\n", s2.data());
+
+  std::string_view sv1 = s;
+  std::string_view sv2 = s;
+  printf("sv1.data() = %p\n", sv1.data());
+  printf("sv2.data() = %p\n", sv2.data());
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\string_view\test-string_view.exe
+s.data() = 0000001c335ffbe0
+s1.data() = 0000001c335ffbc0
+s2.data() = 0000001c335ffba0
+sv1.data() = 0000001c335ffbe0
+sv2.data() = 0000001c335ffbe0
+
+Process finished with exit code 0
+
+```
+
+
+
+### std::span
+
+> 高效便捷访问连续内存的实例对象
+
+
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+#include <span>
+#include <array>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+//高效便捷访问连续内存的实例对象
+
+template<typename T, std::size_t N>
+constexpr void for_each_span(std::span<T, N> _span) {
+  std::for_each(_span.begin(), _span.end(), [](auto &&e) {
+    std::cout << e << "\t";
+  });
+  std::cout << "\n";
+}
+
+constexpr void for_each_span(auto &&_span) {
+  std::for_each(_span.begin(), _span.end(), [](auto &&e) {
+    std::cout << e << "\t";
+  });
+  std::cout << "\n";
+}
+
+int main() {
+
+  std::array<int, 6> arr{1, 2, 3, 4, 5, 6};
+  for_each_span(std::span{arr});
+
+  std::vector<std::string> vec{"123", "abc", "ABC", "456", "def", "DEF"};
+  for_each_span(std::span{vec});
+
+  constexpr char const *const carr[]{"11", "22", "33", "44", "55","66l"};
+  for_each_span(std::span{carr});
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\span\test-span.exe
+1       2       3       4       5       6
+123     abc     ABC     456     def     DEF
+11      22      33      44      55
+
+Process finished with exit code 0
+
+```
+
+
+
+
+
+### std::optional&std::expected
+
+> 有状态的返回值
+>  std::optional 异常值只能为std::null_opt
+>  std::expected 可自定义异常值
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+#include <optional>
+#include <expected>
+#include <string>
+
+/*
+ * 有状态的返回值
+ *  std::optional 异常值只能为std::null_opt
+ *  std::expected 可自定义异常值
+ * */
+
+enum class RES_ERR_CODE : unsigned char {
+  E1 = 0x0f, E2, E3, E4, E5
+};
+
+static constexpr
+std::optional<std::string> optional_test(const bool _cond) {
+  if (_cond)
+    return "abc";
+  return std::nullopt;
+}
+
+static constexpr
+std::expected<std::string, RES_ERR_CODE> expected_test(const int _cond) {
+  if (_cond < 0)
+    return std::unexpected{RES_ERR_CODE::E1};
+  else if (_cond == 0)
+    return std::unexpected{RES_ERR_CODE::E2};
+  else if (_cond > 0xff)
+    return std::unexpected{RES_ERR_CODE::E3};
+  return "1234567890";
+}
+
+int main() {
+  {
+    std::cout << "optional-------------------------------------------------------" << std::endl;
+
+    auto &&res = optional_test(true);
+    if (res.has_value()) {
+      std::cout << res.value() << std::endl;
+    } else {
+      //错误状态处理
+      std::cout << "res error handle" << std::endl;
+    }
+
+    auto &&res1 = optional_test(false);
+    try {
+      auto &s = res1.value();
+      std::cout << "res1.value=" << s << std::endl;
+    } catch (const std::bad_optional_access &e) {
+      //错误状态处理
+      std::cout << "res1 error handle" << std::endl;
+    }
+
+    std::cout << "res1.value_or=" << optional_test(false).value_or("xxx") << std::endl;
+    std::cout << "res1.value_or=" << optional_test(true).value_or("xxx") << std::endl;
+
+    if (auto res2 = optional_test(false)) {
+      std::cout << "*res2=" << *res2 << std::endl;
+    } else {
+      //错误状态处理
+      std::cout << "res2 error handle" << std::endl;
+    }
+
+  }
+
+  {
+    std::cout << "expected-------------------------------------------------------" << std::endl;
+
+    auto res = expected_test(0x1f);
+    if (res.has_value()) {
+      std::cout << res.value() << std::endl;
+    } else {
+      //错误状态处理
+      std::cout << "res error handle , error code: " << static_cast<int>(res.error()) << std::endl;
+    }
+
+    auto res1 = expected_test(-1);
+    try {
+      auto &s = res1.value();
+      std::cout << "res1.value=" << s << std::endl;
+    } catch (const std::bad_expected_access<RES_ERR_CODE> &e) {
+      //错误状态处理
+      std::cout << "res1 error handle" << e.what() << ", error code: " << static_cast<int>(e.error()) << std::endl;
+    }
+
+    std::cout << "res1.value_or=" << expected_test(0xfff).value_or("xxx") << std::endl;
+    std::cout << "res1.value_or=" << expected_test(0x2f).value_or("xxx") << std::endl;
+
+    if (auto res2 = expected_test(0xfff)) {
+      std::cout << "*res2=" << *res2 << std::endl;
+    } else {
+      //错误状态处理
+      std::cout << "res2 error handle, error code: " << static_cast<int>(res.error()) << std::endl;
+    }
+
+  }
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\optional_expected\test-optional_expected.exe
+optional-------------------------------------------------------
+abc
+res1 error handle
+res1.value_or=xxx
+res1.value_or=abc
+res2 error handle
+expected-------------------------------------------------------
+1234567890
+res1 error handlebad access to std::expected without expected value, error code: 15
+res1.value_or=xxx
+res1.value_or=1234567890
+res2 error handle, error code: 96
+
+Process finished with exit code 0
+
+```
+
+
+
+
+
+### std::integer_sequence
+
+> 类模板 std::integer_sequence 表示一个编译时的整数序列。在用作函数模板的实参时，能推导参数包 Ints 并将它用于包展开
+> 1、可以定义一个编译时整数序列
+> 2、包展开可用作元函数实参
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+#include <utility>
+#include <functional>
+#include <string_view>
+#include <tuple>
+
+using namespace std::literals::string_literals;
+
+/*
+ *
+ * 类模板 std::integer_sequence 表示一个编译时的整数序列。在用作函数模板的实参时，能推导参数包 Ints 并将它用于包展开
+ * 1、可以定义一个编译时整数序列
+ * 2、包展开可用作元函数实参
+ *
+ * */
+
+template<typename T, T... ts>
+void print_int_seq(std::string_view _name, std::integer_sequence<T, ts...> _seq) {
+  std::cout << _name << "= [ ";
+  ((std::cout << ts << "\t"), ...); //types包展开
+  std::cout << " ]\n";
+}
+
+template<typename ...tp, typename T, T... ts>
+void print_tuple(std::string_view _name, std::tuple<tp...> _tp, std::integer_sequence<T, ts...> _seq) {
+  std::cout << _name << "= [ ";
+  ((std::cout << std::get<ts>(_tp) << "\t"), ...);
+  std::cout << " ]\n";
+}
+
+template<typename ...tp>
+void print_tuple(std::string_view _name, std::tuple<tp...> _tuple) {
+  print_tuple(_name, _tuple, std::index_sequence_for<tp...>{});
+}
+
+template<typename ...tp>
+void print_tuple2(std::string_view _name, std::tuple<tp...> _tuple) {
+  std::cout << _name << "= [ ";
+  ((std::cout << std::get<tp>(_tuple) << "\t"), ...);
+  std::cout << " ]\n";
+}
+
+int main() {
+
+  std::integer_sequence<unsigned int, 3, 46, 3, 9, 22> i_seq1{};
+  std::make_integer_sequence<int, 3> i_seq2{};
+  std::make_index_sequence<10> idx_seq{};
+  std::index_sequence_for<>{};
+  std::index_sequence<1, 2, 3, 4, 5, 6> i_seq3{}; //<=>std::integer_sequence<std::size_t, 3, 46, 3, 9, 22>{}
+
+  print_int_seq("i_seq1", i_seq1);
+  print_int_seq("i_seq2", i_seq2);
+  print_int_seq("idx_seq", idx_seq);
+  print_int_seq("index_sequence_for", std::index_sequence_for<float, std::iostream, char>{});
+
+  //遍历元组
+  std::apply([](auto &&arg, auto &&...args) {
+
+    std::cout << "[ " << arg;
+    ((std::cout << ", " << args), ...);
+    std::cout << " ]\n";
+
+  }, std::tuple{true, 'a', 123, 0.123, 0.987f, "abcdef"s});
+
+  std::tuple t1{true, 'a', 123, 0.123, 0.987f, "abcdef"s, 1234567890};
+  print_tuple("print_tuple t1", t1);
+//  print_tuple2("print_tuple2 t1", t1); //error, 无法使用重复数据类型
+
+  std::tuple t2{true, 'a', 123, 0.123, 0.987f, "abcdef"s};
+  print_tuple2("print_tuple2 t2", t2);
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\integer_sequence\test-integer_sequence.exe
+i_seq1= [ 3     46      3       9       22       ]
+i_seq2= [ 0     1       2        ]
+idx_seq= [ 0    1       2       3       4       5       6       7       8       9        ]
+index_sequence_for= [ 0 1       2        ]
+[ 1, a, 123, 0.123, 0.987, abcdef ]
+print_tuple t1= [ 1     a       123     0.123   0.987   abcdef  1234567890       ]
+print_tuple2 t2= [ 1    a       123     0.123   0.987   abcdef   ]
+
+Process finished with exit code 0
+
+```
+
