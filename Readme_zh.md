@@ -695,6 +695,471 @@ void ranges::test_ranges()
 }
 ```
 
+
+
+# Meta Programming
+
+## 模板特化
+
+> 类模板可以偏特化和全特化
+>
+> 函数只能全特化
+
+```c++
+//
+// Created by ozcom on 2023/10/17.
+//
+
+#ifndef CPP_FEATURE_DEMO_META_PROGRAMMING_BASE_HPP_
+#define CPP_FEATURE_DEMO_META_PROGRAMMING_BASE_HPP_
+
+#include <iostream>
+#include <array>
+#include <string>
+#include <string_view>
+
+using namespace std::literals::string_literals;
+using namespace std::literals::string_view_literals;
+
+
+//template<typename T>
+//constexpr auto sqt(T t) -> decltype(t * t) {
+//  return t * t;
+//}
+
+template<typename T>
+constexpr auto sqt(T t) {
+  return t * t;
+}
+
+template<auto v>
+constexpr auto t1 = sqt(v);
+
+template<typename T, typename U>
+struct foo {
+  foo(const T &&t, const U &&u) {}
+  void operator()() {
+    std::cout << "泛化版本" << std::endl;
+  }
+};
+
+template<typename U>
+struct foo<int, U> {
+  foo(const int &t, const U &&u) {}
+  void operator()() {
+    std::cout << "偏特化版本" << std::endl;
+  }
+};
+
+template<>
+struct foo<int, char> {
+  foo(const int &t, const char &u) {}
+  void operator()() {
+    std::cout << "全特化版本" << std::endl;
+  }
+};
+
+template<typename T, typename U>
+void my_print(T t, U u) {
+  std::cout << "my_print泛化版本" << std::endl;
+}
+
+/*
+ * 函数模板不支持偏特化
+ * */
+//template<typename U>
+//void my_print<int, U>() {
+//  std::cout << "my_print泛化版本" << std::endl;
+//}
+
+
+/*
+ * 重新定义只有U模板参数my_print版本
+ * 可达到偏特化效果
+ * */
+template<typename U>
+void my_print(bool t, U u) {
+  std::cout << "重新定义只有U模板参数my_print版本" << std::endl;
+}
+
+template<>
+void my_print<int, std::string>(int t, std::string u) {
+  std::cout << "my_print全特化版本" << std::endl;
+}
+
+template<typename T, std::size_t N>
+constexpr std::size_t static_carr_size(T const (&)[N]) {
+  return N;
+}
+
+void base_main() {
+
+  constexpr auto v = t1<123>;
+  std::cout << "v=" << v << "\n";
+
+  foo<int, int>{1, 2}();
+  foo<double, double>{2.0, 4.0}();
+  foo<int, char>{123, 'a'}();
+  foo{'b', 'a'}();
+  foo{"123"s, "7584"s}();
+
+  my_print<double, double>(4.0, 3.3);
+  my_print<double>(4.0, 3.3);
+  my_print<int, std::string>(4, "3.3"s);
+  my_print<std::string>(true, "3.3"s);
+  my_print(4.0, 3.3);
+  my_print(4.0, 3.3);
+  my_print(4, "3.3"s);
+  my_print(true, "3.3"s);
+
+  std::array arr{1231, 45, 67767};
+
+  char carr[]{1, 2, 3, 4, 45, 5, 56, 6, 6, 4, 45, 34, 4};
+  std::cout << "carr size: " << static_carr_size(carr) << "\n";
+  std::cout << "carr size: " << static_carr_size({1, 2, 3, 4, 45, 4, 45, 34, 4}) << "\n";
+
+}
+
+#endif //CPP_FEATURE_DEMO_META_PROGRAMMING_BASE_HPP_
+
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\meta_programming\test-meta_programming.exe
+v=15129
+偏特化版本
+泛化版本
+全特化版本
+泛化版本
+泛化版本
+my_print泛化版本
+my_print泛化版本
+my_print全特化版本
+重新定义只有U模板参数my_print版本
+my_print泛化版本
+my_print泛化版本
+my_print全特化版本
+重新定义只有U模板参数my_print版本
+carr size: 13
+carr size: 9
+
+Process finished with exit code 0
+
+
+```
+
+
+
+## 可变参数模板
+
+> # Fold expressions(since C++17)
+>
+>  
+>
+> [C++](https://en.cppreference.com/w/cpp)
+>
+>  
+>
+> [C++ language](https://en.cppreference.com/w/cpp/language)
+>
+>  
+>
+> [Expressions](https://en.cppreference.com/w/cpp/language/expressions)
+>
+>  
+>
+> [Templates](https://en.cppreference.com/w/cpp/language/templates)
+>
+>  
+>
+> Reduces ([folds](https://en.wikipedia.org/wiki/Fold_(higher-order_function))) a [parameter pack](https://en.cppreference.com/w/cpp/language/parameter_pack) over a binary operator.
+>
+> ### Syntax
+>
+> |                                               |      |      |
+> | --------------------------------------------- | ---- | ---- |
+> | `**(**` *pack op* `**... )**`                 | (1)  |      |
+> |                                               |      |      |
+> | `**( ...**` *op pack* `**)**`                 | (2)  |      |
+> |                                               |      |      |
+> | `**(**` *pack op* `**...**` *op init* `**)**` | (3)  |      |
+> |                                               |      |      |
+> | `**(**` *init op* `**...**` *op pack* `**)**` | (4)  |      |
+> |                                               |      |      |
+>
+> 1) Unary right fold.
+> 2) Unary left fold.
+> 3) Binary right fold.
+> 4) Binary left fold.
+>
+> | *op*   | -    | any of the following 32 *binary* operators: + - * / % ^ & \| = < > << >> += -= *= /= %= ^= &= \|= <<= >>= == != <= >= && \|\| , .* ->*. In a binary fold, both *op*s must be the same. |
+> | ------ | ---- | ------------------------------------------------------------ |
+> | *pack* | -    | an expression that contains an unexpanded [parameter pack](https://en.cppreference.com/w/cpp/language/parameter_pack) and does not contain an operator with [precedence](https://en.cppreference.com/w/cpp/language/operator_precedence) lower than cast at the top level (formally, a *cast-expression*) |
+> | *init* | -    | an expression that does not contain an unexpanded [parameter pack](https://en.cppreference.com/w/cpp/language/parameter_pack) and does not contain an operator with [precedence](https://en.cppreference.com/w/cpp/language/operator_precedence) lower than cast at the top level (formally, a *cast-expression*) |
+>
+> Note that the opening and closing parentheses are a required part of the fold expression.
+>
+> ### Explanation
+>
+> The instantiation of a *fold expression* expands the expression e as follows:
+>
+> 1) Unary right fold `(E` *op* `...)` becomes `(E1` *op* `(`... *op* `(EN-1` *op* `EN)))`
+> 2) Unary left fold `(...` *op* `E)` becomes `(((E1` *op* `E2)` *op* ...`)` *op* `EN)`
+> 3) Binary right fold `(E` *op* `...` *op* `I)` becomes `(E1` *op* `(`... *op* `(EN−1` *op* `(EN` *op* `I))))`
+> 4) Binary left fold `(I` *op* `...` *op* `E)` becomes `((((I` *op* `E1)` *op* `E2)` *op* ...`)` *op* `EN)`
+>
+> (where `N` is the number of elements in the pack expansion)
+>
+> For example,
+>
+> ```c++
+> template<typename... Args>
+> bool all(Args... args) { return (... && args); }
+>  
+> bool b = all(true, true, true, false);
+> // within all(), the unary left fold expands as
+> //  return ((true && true) && true) && false;
+> // b is false
+> ```
+>
+> When a unary fold is used with a pack expansion of length zero, only the following operators are allowed:
+>
+> 1) Logical AND (&&). The value for the empty pack is true.
+> 2) Logical OR (||). The value for the empty pack is false.
+> 3) The comma operator (,). The value for the empty pack is void().
+>
+> ### Notes
+>
+> If the expression used as *init* or as *pack* has an operator with [precedence](https://en.cppreference.com/w/cpp/language/operator_precedence) below cast at the top level, it must be parenthesized:
+>
+> ```c++
+> template<typename... Args>
+> int sum(Args&&... args)
+> {
+> //  return (args + ... + 1 * 2);   // Error: operator with precedence below cast
+>     return (args + ... + (1 * 2)); // OK
+> }
+> ```
+>
+> |                      Feature-test macro                      |  Value  |   Std   |                           Feature                            |
+> | :----------------------------------------------------------: | :-----: | :-----: | :----------------------------------------------------------: |
+> | [`__cpp_fold_expressions`](https://en.cppreference.com/w/cpp/feature_test#cpp_fold_expressions) | 201603L | (C++17) | [Fold expressions](https://en.cppreference.com/w/cpp/language/fold#top) |
+>
+> ### Example
+>
+> Run this code
+>
+> ```c++
+> #include <climits>
+> #include <concepts>
+> #include <cstdint>
+> #include <iostream>
+> #include <type_traits>
+> #include <utility>
+> #include <vector>
+>  
+> template<typename... Args>
+> void printer(Args&&... args)
+> {
+>     (std::cout << ... << args) << '\n';
+> }
+>  
+> template<typename T, typename... Args>
+> void push_back_vec(std::vector<T>& v, Args&&... args)
+> {
+>     static_assert((std::is_constructible_v<T, Args&&> && ...));
+>     (v.push_back(std::forward<Args>(args)), ...);
+> }
+>  
+> template<class T, std::size_t... dummy_pack>
+> constexpr T bswap_impl(T i, std::index_sequence<dummy_pack...>)
+> {
+>     T low_byte_mask = (unsigned char)-1;
+>     T ret{};
+>     ([&]
+>     {
+>         (void)dummy_pack;
+>         ret <<= CHAR_BIT;
+>         ret |= i & low_byte_mask;
+>         i >>= CHAR_BIT;
+>     }(), ...);
+>     return ret;
+> }
+>  
+> constexpr auto bswap(std::unsigned_integral auto i)
+> {
+>     return bswap_impl(i, std::make_index_sequence<sizeof(i)>{});
+> }
+>  
+> int main()
+> {
+>     printer(1, 2, 3, "abc");
+>  
+>     std::vector<int> v;
+>     push_back_vec(v, 6, 2, 45, 12);
+>     push_back_vec(v, 1, 2, 9);
+>     for (int i : v)
+>         std::cout << i << ' ';
+>     std::cout << '\n';
+>  
+>     static_assert(bswap<std::uint16_t>(0x1234u) == 0x3412u);
+>     static_assert(bswap<std::uint64_t>(0x0123456789abcdefull) == 0xefcdab8967452301ULL);
+> }
+> ```
+>
+> Output:
+>
+> ```shell
+> 123abc
+> 6 2 45 12 1 2 9
+> ```
+>
+> ### References
+>
+> - C++23 standard (ISO/IEC 14882:2023):
+>
+> - C++20 standard (ISO/IEC 14882:2020):
+>
+> - C++17 standard (ISO/IEC 14882:2017):
+>
+>   
+
+```c++
+//
+// Created by ozcom on 2023/10/17.
+//
+
+#ifndef CPP_FEATURE_DEMO_META_PROGRAMMING_VARIABLE_TEMPLATE_HPP_
+#define CPP_FEATURE_DEMO_META_PROGRAMMING_VARIABLE_TEMPLATE_HPP_
+
+#include <iostream>
+#include <array>
+#include <string>
+#include <string_view>
+
+using namespace std::literals::string_literals;
+using namespace std::literals::string_view_literals;
+
+template<typename ...Args>
+constexpr
+auto types_sum(Args &&...args) {
+  return (... + args);
+}
+
+template<typename T, T ...args>
+struct my_args_sum {
+  enum {
+    value = (... + args),
+    value2 = (args + ... ),
+    value3 = (0 + ... + args),
+    value4 = (args + ... + 0)
+  };
+};
+
+template<double ...args>
+struct my_args_sum<double, args...> {
+  constexpr inline static auto value = (... + args);
+};
+
+class bar {
+ public:
+  bar() = delete;
+  constexpr explicit bar(std::pair<std::string, int> const &v) : v_(v) {}
+  constexpr explicit bar(std::pair<std::string, int> &&v) : v_(v) {}
+
+  constexpr bar operator+(const bar &rfh) const {
+    std::string k{this->v_.first};
+    k.append(", ");
+    k.append(rfh.v_.first);
+    return bar{std::make_pair(std::move(k), this->v_.second + rfh.v_.second)};
+  }
+
+  bool operator==(const bar &rhs) const {
+    return v_ == rhs.v_;
+  }
+  bool operator!=(const bar &rhs) const {
+    return !(rhs == *this);
+  }
+
+  bool operator<(const bar &rhs) const {
+    return v_ < rhs.v_;
+  }
+  bool operator>(const bar &rhs) const {
+    return rhs < *this;
+  }
+  bool operator<=(const bar &rhs) const {
+    return !(rhs < *this);
+  }
+  bool operator>=(const bar &rhs) const {
+    return !(*this < rhs);
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const bar &bar) {
+    os << "v_: {" << bar.v_.first << " -> " << bar.v_.second << "}";
+    return os;
+  }
+
+ private:
+  std::pair<std::string, int> v_;
+};
+
+template<typename T, T ...args>
+constexpr auto my_args_sum_v = my_args_sum<T, args...>::value;
+
+template<int...args>
+constexpr auto my_integer_sequence_sum_v = my_args_sum_v<int, args...>;
+
+void variable_template_main() {
+
+  std::cout << types_sum(1, 2, 3, 4, 5, 6, 7, 8, 9, 0) << "\n";
+  std::cout << my_args_sum<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>::value << "\n";
+  std::cout << my_args_sum<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>::value2 << "\n";
+  std::cout << my_args_sum<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>::value3 << "\n";
+  std::cout << my_args_sum<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>::value4 << "\n";
+  std::cout << my_args_sum_v<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0> << "\n";
+  std::cout << my_integer_sequence_sum_v<1, 2, 3, 4, 5, 6, 7, 8, 9, 0> << "\n";
+
+}
+
+#endif //CPP_FEATURE_DEMO_META_PROGRAMMING_VARIABLE_TEMPLATE_HPP_
+
+
+
+
+####outpu
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\meta_programming\test-meta_programming.exe
+v=15129
+偏特化版本
+泛化版本
+全特化版本
+泛化版本
+泛化版本
+my_print泛化版本
+my_print泛化版本
+my_print全特化版本
+重新定义只有U模板参数my_print版本
+my_print泛化版本
+my_print泛化版本
+my_print全特化版本
+重新定义只有U模板参数my_print版本
+carr size: 13
+carr size: 9
+------------------------------------------------------------------------------
+45
+45
+45
+45
+45
+45
+45
+
+Process finished with exit code 0
+
+```
+
+
+
 # Feature
 
 ### const
@@ -2931,6 +3396,163 @@ index_sequence_for= [ 0 1       2        ]
 [ 1, a, 123, 0.123, 0.987, abcdef ]
 print_tuple t1= [ 1     a       123     0.123   0.987   abcdef  1234567890       ]
 print_tuple2 t2= [ 1    a       123     0.123   0.987   abcdef   ]
+
+Process finished with exit code 0
+
+```
+
+
+
+
+
+### 可变参数模板
+
+> 可定义一个编译时参数类型包
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+#include <optional>
+#include <utility>
+
+template<typename T, T ...ts>
+constexpr
+std::optional<T> foo() {
+  if (!sizeof...(ts)) return std::nullopt;
+  using res_type = std::decay_t<T>;
+  res_type res{};
+  ((res += ts), ...);
+  return res;
+}
+
+template<typename T, T ...ts>
+struct sum {
+  using value_type = std::decay_t<T>;
+ private:
+  inline static value_type v{};
+ public:
+  inline static value_type const value = ((v += ts), ...);
+};
+
+template<typename T, T ...ts>
+inline std::decay_t<T> const sum_v = sum<T, ts...>::value;
+
+int main() {
+
+  if (auto ret = foo<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>()) {
+    std::cout << "return value: " << *ret;
+  } else {
+    //error handle
+    std::cout << "error handle\n";
+  }
+
+  std::cout << "\nsum = " << sum<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>::value;
+  std::cout << "\nsum_t = " << sum_v<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>;
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\template_types\test-template_types.exe
+return value: 45
+sum = 45
+sum_t = 45
+Process finished with exit code 0
+
+```
+
+
+
+### 内存对齐
+
+> 字节对齐能提高CPU访问内存效率
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+
+/*
+ * 字节对齐能提高CPU访问内存效率
+ *
+ * */
+
+struct A { //默认8字节对齐   : 16
+  char c;
+  bool b;
+  short sn;
+  double d;
+};
+
+struct B {//: 24
+  char c;
+  bool b;
+  alignas(8) short sn;
+  double d;
+};
+
+struct C { //32
+  char c;
+  alignas(8) bool b;
+  alignas(8) short sn;
+  double d;
+};
+
+struct D { //32
+  alignas(8) char c;
+  alignas(8) bool b;
+  alignas(8) short sn;
+  double d;
+};
+
+struct E { //16
+  alignas(8) char c; //1
+  bool b;  //1
+  short sn; //2
+  double d;
+};
+
+int main() {
+
+  std::cout << "char = " << sizeof(char) << "\n";
+  std::cout << "bool = " << sizeof(bool) << "\n";
+  std::cout << "short = " << sizeof(short) << "\n";
+  std::cout << "int = " << sizeof(int) << "\n";
+  std::cout << "long int = " << sizeof(long int) << "\n";
+  std::cout << "long long int = " << sizeof(long long int) << "\n";
+  std::cout << "float = " << sizeof(float) << "\n";
+  std::cout << "double = " << sizeof(double) << "\n";
+  std::cout << "struct A = " << sizeof(A) << "\n";
+  std::cout << "struct B = " << sizeof(B) << "\n";
+  std::cout << "struct C = " << sizeof(C) << "\n";
+  std::cout << "struct D = " << sizeof(D) << "\n";
+  std::cout << "struct E = " << sizeof(E) << "\n";
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\alignas\test-alignas.exe
+char = 1
+bool = 1
+short = 2
+int = 4
+long int = 4
+long long int = 8
+float = 4
+double = 8
+struct A = 16
+struct B = 24
+struct C = 32
+struct D = 32
+struct E = 16
 
 Process finished with exit code 0
 
