@@ -1160,6 +1160,533 @@ Process finished with exit code 0
 
 
 
+# Stream
+
+> C++ 包含如下的输入/输出库：[OOP-风格的](https://en.wikipedia.org/wiki/Object-oriented_programming)、[基于流的输入/输出](https://zh.cppreference.com/w/cpp/io#.E5.9F.BA.E4.BA.8E.E6.B5.81.E7.9A.84.E8.BE.93.E5.85.A5.2F.E8.BE.93.E5.87.BA)库，[基于打印的函数族](https://zh.cppreference.com/w/cpp/io#.E6.89.93.E5.8D.B0.E5.87.BD.E6.95.B0_.28C.2B.2B23_.E8.B5.B7.29) (C++23 起)、以及[C 风格输入/输出](https://zh.cppreference.com/w/cpp/io#C_.E9.A3.8E.E6.A0.BC.E8.BE.93.E5.85.A5.2F.E8.BE.93.E5.87.BA)函数的标准集合。
+>
+> 
+>
+> ### 基于流的输入/输出
+>
+> 基于流的输入/输出库围绕抽象的输入/输出设备组织。这些抽象设备允许相同代码处理对文件、内存流或随即进行任意操作（例如压缩）的自定义适配器设备的输入/输出。
+>
+> 大多数已经被类模板化，故它们能被适配到任何标准字符类型。为最常用的基本字符类型（char 和 wchar_t）提供分离的 typedef。以下列层次将类组织：
+>
+> 
+>
+> 继承图
+>
+> ![image-20231019224409425](./C++%E7%BC%96%E7%A8%8B.assets/image-20231019224409425.png)
+>
+> | 抽象                                                         |                                                              |
+> | ------------------------------------------------------------ | ------------------------------------------------------------ |
+> | 在标头 `<ios>` 定义                                          |                                                              |
+> | [ios_base](https://zh.cppreference.com/w/cpp/io/ios_base)    | 管理格式化标志和输入/输出异常 (类)                           |
+> | [basic_ios](https://zh.cppreference.com/w/cpp/io/basic_ios)  | 管理任意流缓冲 (类模板)                                      |
+> | 在标头 `<streambuf>` 定义                                    |                                                              |
+> | [basic_streambuf](https://zh.cppreference.com/w/cpp/io/basic_streambuf) | 抽象原生设备 (类模板)                                        |
+> | 在标头 `<ostream>` 定义                                      |                                                              |
+> | [basic_ostream](https://zh.cppreference.com/w/cpp/io/basic_ostream) | 包装给定的抽象设备（[std::basic_streambuf](https://zh.cppreference.com/w/cpp/io/basic_streambuf)） 并提供高层输出接口 (类模板) |
+> | 在标头 `<istream>` 定义                                      |                                                              |
+> | [basic_istream](https://zh.cppreference.com/w/cpp/io/basic_istream) | 包装给定的抽象设备（[std::basic_streambuf](https://zh.cppreference.com/w/cpp/io/basic_streambuf)） 并提供高层输入接口 (类模板) |
+> | [basic_iostream](https://zh.cppreference.com/w/cpp/io/basic_iostream) | 包装给定的抽象设备（[std::basic_streambuf](https://zh.cppreference.com/w/cpp/io/basic_streambuf)） 并提供高层输入/输出接口 (类模板) |
+> | 文件输入/输出实现                                            |                                                              |
+> | 在标头 `<fstream>` 定义                                      |                                                              |
+> | [basic_filebuf](https://zh.cppreference.com/w/cpp/io/basic_filebuf) | 抽象原生文件设备 (类模板)                                    |
+> | [basic_ifstream](https://zh.cppreference.com/w/cpp/io/basic_ifstream) | 实现高层文件流输入操作 (类模板)                              |
+> | [basic_ofstream](https://zh.cppreference.com/w/cpp/io/basic_ofstream) | 实现高层文件流输出操作 (类模板)                              |
+> | [basic_fstream](https://zh.cppreference.com/w/cpp/io/basic_fstream) | 实现高层文件流输入/输出操作 (类模板)                         |
+> | 字符串输入/输出实现                                          |                                                              |
+> | 在标头 `<sstream>` 定义                                      |                                                              |
+> | [basic_stringbuf](https://zh.cppreference.com/w/cpp/io/basic_stringbuf) | 实现原生字符串设备 (类模板)                                  |
+> | [basic_istringstream](https://zh.cppreference.com/w/cpp/io/basic_istringstream) | 实现高层字符串流输入操作 (类模板)                            |
+> | [basic_ostringstream](https://zh.cppreference.com/w/cpp/io/basic_ostringstream) | 实现高层字符串流输出操作 (类模板)                            |
+> | [basic_stringstream](https://zh.cppreference.com/w/cpp/io/basic_stringstream) | 实现高层字符串流输入/输出操作 (类模板)                       |
+> | 数组输入/输出实现                                            |                                                              |
+> | 在标头 `<spanstream>` 定义                                   |                                                              |
+> | [basic_spanbuf](https://zh.cppreference.com/w/cpp/io/basic_spanbuf)(C++23) | 实现原始固定字符缓冲区设备 (类模板)                          |
+> | [basic_ispanstream](https://zh.cppreference.com/w/cpp/io/basic_ispanstream)(C++23) | 实现固定字符缓冲区输入操作 (类模板)                          |
+> | [basic_ospanstream](https://zh.cppreference.com/w/cpp/io/basic_ospanstream)(C++23) | 实现固定字符缓冲区输出操作 (类模板)                          |
+> | [basic_spanstream](https://zh.cppreference.com/w/cpp/io/basic_spanstream)(C++23) | 实现固定字符缓冲区输入/输出操作 (类模板)                     |
+> | 在标头 `<strstream>` 定义                                    |                                                              |
+> | [strstreambuf](https://zh.cppreference.com/w/cpp/io/strstreambuf)(C++98 中弃用) | 实现原生字符数组设备 (类)                                    |
+> | [istrstream](https://zh.cppreference.com/w/cpp/io/istrstream)(C++98 中弃用) | 实现字符数组输入操作 (类)                                    |
+> | [ostrstream](https://zh.cppreference.com/w/cpp/io/ostrstream)(C++98 中弃用) | 实现字符数组输出操作 (类)                                    |
+> | [strstream](https://zh.cppreference.com/w/cpp/io/strstream)(C++98 中弃用) | 实现字符数组输入/输出操作 (类)                               |
+> | 同步的输出                                                   |                                                              |
+> | 在标头 `<syncstream>` 定义                                   |                                                              |
+> | [basic_syncbuf](https://zh.cppreference.com/w/cpp/io/basic_syncbuf)(C++20) | 同步输出设备的包装 (类模板)                                  |
+> | [basic_osyncstream](https://zh.cppreference.com/w/cpp/io/basic_osyncstream)(C++20) | 同步输出流的包装 (类模板)                                    |
+>
+> #### typedef
+>
+> 在 `std` 命名空间提供对常用字符类型的下列 typedef：
+>
+> ```c++
+> typedef basic_ios<char>                ios;
+> typedef basic_ios<wchar_t>            wios;
+>  
+> typedef basic_streambuf<char>     streambuf;
+> typedef basic_streambuf<wchar_t> wstreambuf;
+> typedef basic_filebuf<char>         filebuf;
+> typedef basic_filebuf<wchar_t>     wfilebuf;
+> typedef basic_stringbuf<char>     stringbuf;
+> typedef basic_stringbuf<wchar_t> wstringbuf;
+> typedef basic_syncbuf<char>         syncbuf; // C++20
+> typedef basic_syncbuf<wchar_t>     wsyncbuf; // C++20
+> typedef basic_spanbuf<char>         spanbuf; // C++23
+> typedef basic_spanbuf<wchar_t>     wspanbuf; // C++23
+>  
+> typedef basic_istream<char>         istream;
+> typedef basic_istream<wchar_t>     wistream;
+> typedef basic_ostream<char>         ostream;
+> typedef basic_ostream<wchar_t>     wostream;
+> typedef basic_iostream<char>       iostream;
+> typedef basic_iostream<wchar_t>   wiostream;
+>  
+> typedef basic_ifstream<char>       ifstream;
+> typedef basic_ifstream<wchar_t>   wifstream;
+> typedef basic_ofstream<char>       ofstream;
+> typedef basic_ofstream<wchar_t>   wofstream;
+> typedef basic_fstream<char>         fstream;
+> typedef basic_fstream<wchar_t>     wfstream;
+>  
+> typedef basic_istringstream<char>     istringstream;
+> typedef basic_istringstream<wchar_t> wistringstream;
+> typedef basic_ostringstream<char>     ostringstream;
+> typedef basic_ostringstream<wchar_t> wostringstream;
+> typedef basic_stringstream<char>       stringstream;
+> typedef basic_stringstream<wchar_t>   wstringstream;
+>  
+> typedef basic_osyncstream<char>     osyncstream; // C++20
+> typedef basic_osyncstream<wchar_t> wosyncstream; // C++20
+>  
+> typedef basic_ispanstream<char>     ispanstream; // C++23
+> typedef basic_ispanstream<wchar_t> wispanstream; // C++23
+> typedef basic_ospanstream<char>     ospanstream; // C++23
+> typedef basic_ospanstream<wchar_t> wospanstream; // C++23
+> typedef basic_spanstream<char>       spanstream; // C++23
+> typedef basic_spanstream<wchar_t>   wspanstream; // C++23
+> ```
+>
+> #### 预定义标准流对象
+>
+> | 在标头 `<iostream>` 定义                               |                                                              |
+> | ------------------------------------------------------ | ------------------------------------------------------------ |
+> | [cinwcin](https://zh.cppreference.com/w/cpp/io/cin)    | 从标准 C 输入流 [stdin](https://zh.cppreference.com/w/cpp/io/c) 中读取 (全局对象) |
+> | [coutwcout](https://zh.cppreference.com/w/cpp/io/cout) | 写入到标准 C 输出流 [stdout](https://zh.cppreference.com/w/cpp/io/c) (全局对象) |
+> | [cerrwcerr](https://zh.cppreference.com/w/cpp/io/cerr) | 写入到标准 C 错误流 [stderr](https://zh.cppreference.com/w/cpp/io/c)，无缓冲 (全局对象) |
+> | [clogwclog](https://zh.cppreference.com/w/cpp/io/clog) | 写入到标准 C 错误流 [stderr](https://zh.cppreference.com/w/cpp/io/c) (全局对象) |
+>
+> #### [输入/输出操纵符](https://zh.cppreference.com/w/cpp/io/manip)
+>
+> 基于流的输入/输出库用 [输入/输出操纵符](https://zh.cppreference.com/w/cpp/io/manip)（例如 [std::boolalpha](https://zh.cppreference.com/w/cpp/io/manip/boolalpha)、[std::hex](https://zh.cppreference.com/w/cpp/io/manip/hex) 等）控制流的行为。
+>
+> #### 类型
+>
+> 定义下列辅助类型：
+>
+> | 在标头 `<ios>` 定义                                          |                                                              |
+> | ------------------------------------------------------------ | ------------------------------------------------------------ |
+> | [streamoff](https://zh.cppreference.com/w/cpp/io/streamoff)  | 表示相对的文件/流位置（距 fpos 的偏移），足以表示任何文件大小 (typedef) |
+> | [streamsize](https://zh.cppreference.com/w/cpp/io/streamsize) | 表示一次输入/输出操作中转移的字符数或输入/输出缓冲区的大小 (typedef) |
+> | [fpos](https://zh.cppreference.com/w/cpp/io/fpos)            | 表示流或文件中的绝对位置 (类模板)                            |
+>
+> 提供下列 [std::fpos](http://zh.cppreference.com/w/cpp/io/fpos)<[std::mbstate_t](http://zh.cppreference.com/w/cpp/string/multibyte/mbstate_t)> 的 typedef 名：
+>
+> | 在标头 `<iosfwd>` 定义      |                                                              |
+> | --------------------------- | ------------------------------------------------------------ |
+> | 类型                        | 定义                                                         |
+> | `std::streampos`            | [std::fpos](http://zh.cppreference.com/w/cpp/io/fpos)<[std::char_traits](http://zh.cppreference.com/w/cpp/string/char_traits)<char>::state_type> |
+> | `std::wstreampos`           | [std::fpos](http://zh.cppreference.com/w/cpp/io/fpos)<[std::char_traits](http://zh.cppreference.com/w/cpp/string/char_traits)<wchar_t>::state_type> |
+> | `std::u8streampos` (C++20)  | [std::fpos](http://zh.cppreference.com/w/cpp/io/fpos)<[std::char_traits](http://zh.cppreference.com/w/cpp/string/char_traits)<char8_t>::state_type> |
+> | `std::u16streampos` (C++11) | [std::fpos](http://zh.cppreference.com/w/cpp/io/fpos)<[std::char_traits](http://zh.cppreference.com/w/cpp/string/char_traits)<char16_t>::state_type> |
+> | `std::u32streampos` (C++11) | [std::fpos](http://zh.cppreference.com/w/cpp/io/fpos)<[std::char_traits](http://zh.cppreference.com/w/cpp/string/char_traits)<char32_t>::state_type> |
+>
+> #### 错误类别接口
+>
+> | 在标头 `<ios>` 定义                                          |                               |
+> | ------------------------------------------------------------ | ----------------------------- |
+> | [io_errc](https://zh.cppreference.com/w/cpp/io/io_errc)(C++11) | 输入/输出流的错误码 (枚举)    |
+> | [iostream_category](https://zh.cppreference.com/w/cpp/io/iostream_category)(C++11) | 鉴别 iostream 错误类别 (函数) |
+>
+> ### 打印函数 (C++23 起)
+>
+> 对Unicode编码的格式化文本提供输入输出支持的print族函数。这些函数拥有 std::format 带来的性能优势，默认情况下与本地环境无关；减少使用全局状态，同时避免 operator<< 调用和申请临时的 [std::string](https://zh.cppreference.com/w/cpp/string/basic_string) 对象。一般情况下比 [iostreams](https://zh.cppreference.com/w/cpp/io#Stream-based_I.2FO) 和 [stdio](https://zh.cppreference.com/w/cpp/io#C-style_I.2FO) 更高效。
+>
+> 标准库提供了如下print族函数：
+>
+> | 在标头 `<print>` 定义                                        |                                                              |
+> | ------------------------------------------------------------ | ------------------------------------------------------------ |
+> | [print](https://zh.cppreference.com/w/cpp/io/print)(C++23)   | 将参数的 [格式化](https://zh.cppreference.com/w/cpp/utility/format) 表达输出到 [stdout](https://zh.cppreference.com/w/cpp/io/c) 或文件缓冲区 (函数模板) |
+> | [println](https://zh.cppreference.com/w/cpp/io/println)(C++23) | 将参数的 [格式化](https://zh.cppreference.com/w/cpp/utility/format) 表达输出到 [stdout](https://zh.cppreference.com/w/cpp/io/c) 或文件缓冲区，输出完成后换行 (函数模板) |
+> | [vprint_unicode](https://zh.cppreference.com/mwiki/index.php?title=cpp/io/vprint_unicode&action=edit&redlink=1)(C++23) | 使用[类型擦除](https://zh.cppreference.com/w/cpp/utility/format/basic_format_args)的参数表示，打印到支持Unicode的[stdout](https://zh.cppreference.com/w/cpp/io/c)或文件流 (函数) |
+> | [vprint_nonunicode](https://zh.cppreference.com/mwiki/index.php?title=cpp/io/vprint_nonunicode&action=edit&redlink=1)(C++23) | 使用[类型擦除](https://zh.cppreference.com/w/cpp/utility/format/basic_format_args)的参数表示，打印到[stdout](https://zh.cppreference.com/w/cpp/io/c)或文件流 (函数) |
+>
+> 
+>
+> ### [C 风格输入/输出](https://zh.cppreference.com/w/cpp/io/c)
+>
+> C++ 也包含了 [C 所定义的输入/输出函数](https://zh.cppreference.com/w/cpp/io/c)，如 [std::fopen](https://zh.cppreference.com/w/cpp/io/c/fopen)、[std::getc](https://zh.cppreference.com/w/cpp/io/c/fgetc) 等。
+
+
+
+## 文件读写
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+
+struct Bar {
+  int n;
+  Bar() {
+    std::cout << "Enter n: ";
+    std::cin >> n;
+  }
+};
+
+static Bar b;
+static void standard_stream() {
+
+  std::cout << "standard output stream \n";
+
+  std::string s{};
+  std::cin >> s;
+
+  std::cerr << s << "\n";
+
+  std::wstring ws{};
+  std::wcin >> ws;
+
+  std::wclog << ws << "\n";
+
+  std::clog << "sadfasdtgdfgdfg\n";
+
+  std::clog << "b.n=" << b.n;
+
+}
+
+static void str_stream() {
+
+  std::stringstream ss{};
+  ss << "10000";
+  int a;
+  ss >> a;
+  std::cout << "a = " << a << "\n";
+
+  std::string s{};
+  ss >> s;
+  std::cout << "s = " << a << "\n";
+
+}
+
+static void file_stream() {
+
+  std::fstream f{R"(C:\Users\ozcom\Desktop\123.txt)", std::ios::in | std::ios::out};
+
+  if (!f.is_open()) {
+    std::cerr << "failed to open " << R"(C:\Users\ozcom\Desktop\123.txt)" << "\n";
+    return;
+  }
+
+  std::string str{};
+  while (f >> str) {
+    std::cout << str << "\n";
+  }
+
+}
+
+int main() {
+
+  standard_stream();
+  str_stream();
+  file_stream();
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\stream\test-stream.exe
+Enter n: 123
+standard output stream 
+aaa
+aaa
+bbb
+a = 10000
+s = 10000
+1111111111111111111111
+aaaaaaaaaaa
+CCCCCCCCCCCCCCCCCCCCCCC
+三十个第三个第四个豆腐干士大夫根深蒂固
+bbb
+sadfasdtgdfgdfg
+b.n=123
+Process finished with exit code 0
+
+
+```
+
+
+
+# SFINAE
+
+## 函数重载
+
+
+
+### 指针、对象约束
+
+> 根据类型为指针和对象的调用方式，选取特化函数
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+
+inline auto call(...) {
+  std::cout << "大保底" << "\n";
+}
+
+template<typename T, typename F>
+constexpr
+auto call(T t, F f) -> decltype((t.*f)()) {
+  std::cout << "call 1" << "\n";
+  return (t.*f)();
+}
+
+template<typename T, typename F>
+constexpr
+auto call(T t, F f) -> decltype((t->*f)()) {
+  std::cout << "call 2" << "\n";
+  return (t->*f)();
+}
+
+struct A {
+  inline void print() const {
+    std::cout << "hello A" << "\n";
+  }
+};
+
+int main() {
+
+  A a{};
+  call(a, &A::print);
+  call(&a, &A::print);
+  call(1, 2);
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\SFINAE\test-SFINAE.exe
+call 1
+hello A
+call 2
+hello A
+大保底
+
+Process finished with exit code 0
+
+
+```
+
+
+
+### 成员约束
+
+> 根据类或者对象是否存在某个成员，选取特化函数
+
+```c++
+template<bool, typename T>
+struct enable_if {
+  using type = T;
+};
+
+template<typename T>
+struct enable_if<false, T> {};
+
+auto foo(...) {
+  std::cout << "大保底" << "\n";
+}
+
+template<typename T>
+constexpr
+typename enable_if<std::is_same_v<T, int>, T>::type foo(T v) {
+  std::cout << "T type int" << "\n";
+  return v;
+}
+
+template<typename T>
+constexpr
+typename enable_if<std::is_same_v<T, double>, T>::type foo(T v) {
+  std::cout << "T type double" << "\n";
+  return v;
+}
+
+int main() {
+
+  foo(1);
+  foo(0.02);
+  foo();
+
+}
+
+
+
+####output
+T type int
+T type double
+大保底
+```
+
+
+
+### 类型约束
+
+> 根据类型，选取特化函数
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+
+template<bool, typename T>
+struct enable_if {
+  using type = T;
+};
+
+template<typename T>
+struct enable_if<false, T> {};
+
+template<typename T>
+constexpr
+enable_if<std::is_integral_v<T>, bool>::type is_odd(T t) {
+  std::cout << "is_odd: T type int" << "\n";
+  return bool(t % 2);
+}
+
+int main() {
+
+  is_odd(1);
+//  is_odd(0.1); //error
+
+}
+
+
+
+
+####output
+is_odd: T type int
+    
+```
+
+
+
+### 成员类型和是否存在同时约束
+
+> 根据成员是否存在以及是某个特定的类型，选取特化函数
+
+
+
+```c++
+template<typename, typename>
+struct has_x : std::false_type {};
+
+template<typename T>
+struct has_x<T, decltype(T::x)> : std::true_type {};
+
+template<typename T, typename C>
+inline constexpr bool has_x_v = has_x<T, C>::value;
+
+struct F {
+  int x;
+};
+
+struct E {
+  double x;
+};
+
+int main() {
+
+  constexpr auto f_has = has_x_v<F, double>;
+  std::cout << "f_has=" << f_has << "\n";
+  constexpr auto ff_has = has_x_v<F, int>;
+  std::cout << "b_has=" << ff_has << "\n";
+
+  constexpr auto e_has = has_x_v<E, double>;
+  std::cout << "e_has=" << e_has << "\n";
+  constexpr auto ee_has = has_x_v<E, int>;
+  std::cout << "e_has=" << ee_has << "\n";
+
+}
+
+
+
+####output
+f_has=0
+b_has=1
+e_has=1
+e_has=0
+
+
+```
+
+
+
+### 判断类中是否存在内嵌type
+
+```c++
+
+
+template<typename ... Types>
+using void_t = void;
+
+template<typename, typename = void_t<>>
+struct has_type_member : std::false_type {};
+
+template<typename T>
+struct has_type_member<T, void_t<typename T::type>> : std::true_type {};
+
+struct S {
+  using type = int;
+};
+
+struct S2 {
+};
+
+int main() {
+
+  constexpr auto s_has = has_type_member<S>::value;
+  std::cout << "s_has=" << s_has << "\n";
+  constexpr auto s2_has = has_type_member<S2>::value;
+  std::cout << "s2_has=" << s2_has << "\n";
+
+}
+
+
+
+####output
+s_has=1
+s2_has=0
+
+```
+
+
+
 # Feature
 
 ### const
@@ -3557,4 +4084,142 @@ struct E = 16
 Process finished with exit code 0
 
 ```
+
+
+
+### std::is_same
+
+> 元函数
+>
+> 判断两个类型是否相同
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+
+template<auto T, auto U>
+inline constexpr
+auto add() {
+  std::cout << __DATE__ << __TIMESTAMP__ << __FUNCTION__ << "\n";
+  return T + U;
+}
+
+class A {
+ public:
+  auto add(int a, int b) {
+    std::cout << __DATE__ << __TIMESTAMP__ << __FUNCTION__ << "\n";
+    return a + b;
+  }
+
+};
+
+int main() {
+
+  constexpr bool v = std::is_same_v<decltype(add<3, 1>()), double>;
+  std::cout << v << "\n";
+
+//  std::declval不构造对象调用成员函数  decay_t去除类型修饰
+  constexpr bool v2 = std::is_same_v<std::decay_t<decltype(std::declval<A>().add(1, 4))>, int>;
+  std::cout << v2 << "\n";
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\SFINAE\test-SFINAE.exe
+call 1
+hello A
+call 2
+hello A
+大保底
+A::print pointer: 00000017befff8a0 
+
+Process finished with exit code 0
+
+```
+
+
+
+### conditional
+
+> 元函数
+>
+> 根据条件选择类型
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+
+class A {
+ public:
+  inline void print() const {
+    std::cout << "print A" << "\n";
+  }
+};
+
+class B {
+ public:
+  inline void print() const {
+    std::cout << "print B" << "\n";
+  }
+};
+
+template<bool _cond>
+class T : public std::conditional_t<_cond, A, B> {};
+
+template<bool _cond, typename T, typename U>
+struct conditional {
+  using type = T;
+};
+
+template<typename T, typename U>
+struct conditional<false, T, U> {
+  using type = U;
+};
+
+template<bool cond, typename T, typename U>
+using conditional_t = typename conditional<cond, T, U>::type;
+
+template<bool _cond>
+class T2 : public conditional_t<_cond, A, B> {};
+
+int main() {
+
+  T<true>().print();
+  T<false>().print();
+
+  T2<true>().print();
+  T2<false>().print();
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\conditional\test-conditional.exe
+print A
+print B
+print A
+print B
+
+Process finished with exit code 0
+
+```
+
+
+
+
+
+
+
+
 

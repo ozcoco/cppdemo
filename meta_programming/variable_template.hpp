@@ -34,45 +34,40 @@ struct my_args_sum<double, args...> {
   constexpr inline static auto value = (... + args);
 };
 
-class bar {
+class Bar {
  public:
-  bar() = delete;
-  constexpr explicit bar(std::pair<std::string, int> const &v) : v_(v) {}
-  constexpr explicit bar(std::pair<std::string, int> &&v) : v_(v) {}
+  Bar() = delete;
+  constexpr explicit Bar(std::pair<std::string, int> const &v) : v_(v) {}
+  constexpr explicit Bar(std::pair<std::string, int> &&v) : v_(v) {}
 
-  constexpr bar operator+(const bar &rfh) const {
+  constexpr Bar operator+(const Bar &rfh) const {
     std::string k{this->v_.first};
     k.append(", ");
     k.append(rfh.v_.first);
-    return bar{std::make_pair(std::move(k), this->v_.second + rfh.v_.second)};
+    return Bar{std::make_pair(std::move(k), this->v_.second + rfh.v_.second)};
   }
 
-  bool operator==(const bar &rhs) const {
+  bool operator==(const Bar &rhs) const {
     return v_ == rhs.v_;
   }
-  bool operator!=(const bar &rhs) const {
+  bool operator!=(const Bar &rhs) const {
     return !(rhs == *this);
   }
 
-  bool operator<(const bar &rhs) const {
+  bool operator<(const Bar &rhs) const {
     return v_ < rhs.v_;
   }
-  bool operator>(const bar &rhs) const {
+  bool operator>(const Bar &rhs) const {
     return rhs < *this;
   }
-  bool operator<=(const bar &rhs) const {
+  bool operator<=(const Bar &rhs) const {
     return !(rhs < *this);
   }
-  bool operator>=(const bar &rhs) const {
+  bool operator>=(const Bar &rhs) const {
     return !(*this < rhs);
   }
 
-  friend std::ostream &operator<<(std::ostream &os, const bar &bar) {
-    os << "v_: {" << bar.v_.first << " -> " << bar.v_.second << "}";
-    return os;
-  }
-
- private:
+   private:
   std::pair<std::string, int> v_;
 };
 
