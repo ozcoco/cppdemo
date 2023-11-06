@@ -4221,5 +4221,451 @@ Process finished with exit code 0
 
 
 
+# ASIO
 
+## 定时器
+
+### 异步
+
+#### 异步定时任务
+
+```c++
+//
+// Created by oz on 23-9-9.
+//
+#include <iostream>
+#include <boost/asio.hpp>
+#include <array>
+
+using namespace std::chrono;
+using namespace boost::asio;
+using namespace boost::asio::ip;
+using namespace boost;
+
+static void Print(boost::system::error_code ec) {
+    std::cout << "Hello, world!" << std::endl;
+}
+
+static void async_timer() {
+
+    boost::asio::io_context ioc;
+    boost::asio::steady_timer timer(ioc, 3s);
+    timer.async_wait(&Print);
+    ioc.run();
+
+}
+
+int main(){
+    async_timer();
+}
+
+
+
+
+####output
+Hello, world!
+```
+
+
+
+## TCPIP
+
+### TCP
+
+#### echo_server
+
+```c++
+//
+// Created by oz on 23-9-9.
+//
+#include <iostream>
+#include <boost/asio.hpp>
+#include <array>
+
+using namespace std::chrono;
+using namespace boost::asio;
+using namespace boost::asio::ip;
+using namespace boost;
+
+enum {
+    BUF_SIZE = 1024,
+    TCP_PORT = 8080
+};
+
+static void Session(tcp::socket socket) {
+    try {
+        while (true) {
+            std::array<char, BUF_SIZE> data{};
+
+            boost::system::error_code ec;
+            std::size_t length = socket.read_some(boost::asio::buffer(data), ec);
+
+            if (ec == boost::asio::error::eof) {
+                std::cout << "client close" << std::endl;
+                break;
+            } else if (ec) {
+                throw boost::system::system_error(ec);
+            }
+
+            boost::asio::write(socket, boost::asio::buffer(data, length));
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+    }
+}
+
+static void echo_server() {
+
+    boost::asio::io_context ioc;
+
+    tcp::acceptor acceptor(ioc, tcp::endpoint(tcp::v4(), TCP_PORT));
+
+    try {
+        while (true) {
+            Session(acceptor.accept());
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+    }
+
+}
+
+
+int main() {
+
+    echo_server();
+
+}
+
+
+
+####output
+(base) oz@ubuntu:~/WK/asio/test$ nc localhost 8080
+hello
+hello
+
+```
+
+
+
+
+
+# Sort
+
+
+
+## 冒泡排序
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <span>
+
+template<typename T, std::size_t N>
+constexpr
+void sort(std::span<T, N> _span) {
+  T tmp{};
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      if (_span[i] > _span[j]) {
+        tmp = _span[j];
+        _span[j] = _span[i];
+        _span[i] = tmp;
+      }
+    }
+  }
+}
+
+int main() {
+
+  int arr[]{1, 7, 9, 23, 43, 76574, 3, 9, 99, 6, 77, 899, 356};
+  sort(std::span{arr});
+  for (auto const &v : arr) {
+    std::cout << v << "\t";
+  }
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\sort\test-sort.exe
+76574	899	356	99	77	43	23	9	9	7	6	3	1	
+Process finished with exit code 0
+
+```
+
+
+
+
+
+# 生僻知识点
+
+## 在C中定义struct的私有成员
+
+> 核心知识点：
+>
+> 1、struct指针指向的地址是struct第一个成员的地址
+>
+> 2、union可以实现指针的多态
+
+**info_struct_c.h**
+
+```c++
+//
+// Created by ozcom on 2023/11/6.
+//
+
+#ifndef CPP_FEATURE_DEMO_PROVITE_MEMBER_STRUCT_C_INFO_STRUCT_C_H_
+#define CPP_FEATURE_DEMO_PROVITE_MEMBER_STRUCT_C_INFO_STRUCT_C_H_
+
+extern "C" {
+
+typedef struct info {} info_t;
+
+info_t *create_info(char const *name, int age);
+
+int get_age(info_t const *info);
+char const *get_name(info_t const *info);
+
+void set_age(info_t const *info, int age);
+void set_name(info_t const *info, char const *name);
+
+}
+
+#endif //CPP_FEATURE_DEMO_PROVITE_MEMBER_STRUCT_C_INFO_STRUCT_C_H_
+
+```
+
+
+
+ **info_struct_c.cpp**
+
+```c++
+//
+// Created by ozcom on 2023/11/6.
+//
+
+extern "C" {
+
+#include "info_struct_c.h"
+
+#include <malloc.h>
+#include <strings.h>
+
+typedef struct info_impl {
+  union { //多态
+    info_t *p;
+    int *_p;
+  };
+  int age;
+  char *name;
+} info_impl_t;
+
+info_t *create_info(const char *name, int age) {
+
+  info_impl_t *impl = (info_impl_t *) malloc(sizeof(info_impl));
+  impl->age = age;
+  impl->name = (char *) malloc(strlen(name) + 1);
+  strcpy(impl->name, name);
+
+  return (info_t *) impl;
+}
+
+int get_age(const info_t *info) {
+  info_impl_t *impl = (info_impl_t *) info;
+  return impl->age;
+}
+
+char const *get_name(const info_t *info) {
+  info_impl_t *impl = (info_impl_t *) info;
+  return impl->name;
+}
+
+void set_age(const info_t *info, int age) {
+  info_impl_t *impl = (info_impl_t *) info;
+  impl->age = age;
+}
+
+void set_name(const info_t *info, const char *name) {
+  info_impl_t *impl = (info_impl_t *) info;
+
+  if (strlen(name) == strlen(impl->name)) {
+    strcpy(impl->name, name);
+  } else {
+    free(impl->name);
+    impl->name = (char *) malloc(strlen(name) + 1);
+    strcpy(impl->name, name);
+  }
+
+}
+
+}
+
+
+
+
+```
+
+
+
+ **main.cpp**
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include "info_struct_c.h"
+
+int main() {
+
+  info_t *info = create_info("abcd", 10);
+  printf("info{ name=%s, age = %d }\n", get_name(info), get_age(info));
+
+  set_name(info, "一只快乐的喵");
+  set_age(info, 123);
+  printf("info{ name=%s, age = %d }\n", get_name(info), get_age(info));
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\provite_member_struct_c\test-provite_member_struct_c.exe
+info{ name=abcd, age = 10 }
+info{ name=一只快乐的喵, age = 123 }
+
+Process finished with exit code 0
+
+```
+
+
+
+## struct不定长数组的实现
+
+> 核心知识点：
+>
+> 1、数组在struct中指向的是一个固定的地址
+>
+> 2、无长度数组是一个指向固定地址的指针
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+
+extern "C" {
+
+#include <malloc.h>
+#include <strings.h>
+
+typedef struct message {
+  int type;
+  int id;
+  int len;
+  char data[];
+} message_t;
+
+}
+
+int main() {
+
+  char const data[]{"1111111111111111111111111111111111111111111111111"
+                    "2222222222222222222222222222222222222222222222222"
+                    "3333333333333333333333333333333333333333333333333"
+                    "4444444444444444444444444444444444444444444444444"
+                    "5555555555555555555555555555555555555555555555555"
+                    "6666666666666666666666666666666666666666666666666"
+                    "7777777777777777777777777777777777777777777777777"
+                    "8888888888888888888888888888888888888888888888888"
+                    "9999999999999999999999999999999999999999999999999"
+                    "0000000000000000000000000000000000000000000000000"
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    "ccccccccccccccccccccccccccccccccccccccccccccccccc"};
+
+  printf("data str len: %zu\n", strlen(data));
+  printf("data size: %zu\n", sizeof(data));
+
+  const int data_len = sizeof(data);
+  const int msg_len = sizeof(message) + data_len;
+  message_t *msg = (message_t *) malloc(msg_len);
+  msg->type = 1;
+  msg->id = 0xff0;
+  msg->len = data_len;
+  memcpy(msg->data, data, data_len);
+
+  printf("message{ type=%d, id=%d, len=%d, data=%s }\n", msg->type, msg->id, msg->len, msg->data);
+
+  char data2[]{"123"};
+  msg->len = sizeof(data2);
+  memcpy(msg->data, data2, msg->len);
+  printf("message{ type=%d, id=%d, len=%d, data=%s }\n", msg->type, msg->id, msg->len, msg->data);
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\zore_arr_struct\test-zore_arr_struct.exe
+data str len: 637
+data size: 638
+message{ type=1, id=4080, len=638, data=1111111111111111111111111111111111111111111111111222222222222222222222222222222222222222222222222233333333333333333333333333333333333333333333333334444444444444444444444444444444444444444444444444555555555555555555555555555555555555555555555555566666666666666666666666666666666666666666666666667777777777777777777777777777777777777777777777777888888888888888888888888888888888888888888888888899999999999999999999999999999999999999999999999990000000000000000000000000000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccc }
+message{ type=1, id=4080, len=4, data=123 }
+
+Process finished with exit code 0
+
+```
+
+
+
+## -1在怎样的情况下会大于正整数
+
+> 核心知识点：
+>
+> 1、在逻辑运算中若存在有符号整型和无符号整数，有符号整数会隐式转换为无符号整型，然后再进行比较
+>
+> 2、在c/c++逻辑比较中应该避免使用无符号整型
+
+```c++
+ //
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+
+int main() {
+
+  int a = -1;
+  auto a_size = sizeof(a);
+  printf("a_size=%llu\n", a_size);
+
+  if (a > a_size) {
+    printf("大于\n");
+  } else {
+    printf("小于\n");
+  }
+
+  auto ua = static_cast<unsigned int>(a);
+  printf("ua=%u\n", ua);
+
+}
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\how_negative_greater_unsigned_int_c\test-how_negative_greater_unsigned_int_c.exe
+a_size=4
+大于
+ua=4294967295
+
+Process finished with exit code 0
+
+```
 
