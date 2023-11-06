@@ -4402,7 +4402,7 @@ Process finished with exit code 0
 
 
 
-# 生僻知识点
+# 冷知识
 
 ## 在C中定义struct的私有成员
 
