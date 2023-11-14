@@ -559,6 +559,91 @@ Process finished with exit code 0
 
 ```
 
+
+
+# OOP
+
+## 纯虚函数
+
+> 注意点：
+>
+> 1、C++中纯虚函数不能被构造函数调用，但在Java中可以；
+>
+> 2、构造函数直接调用纯虚函数会在编译时报错
+>
+> 3、构造函数间接调用纯虚函数会在运行时报错
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+#include <type_traits>
+
+/**
+ *
+ * C++中纯虚函数不能被构造函数调用，但在Java中可以
+ *
+ * **/
+
+class Foo {
+ public:
+  Foo() {
+//    print();  //compile error
+    printf("Foo init\n");
+    show(); //runtime error
+  }
+
+  virtual void print() = 0;
+
+  virtual void show() {
+    print();
+  }
+
+};
+
+class SubFoo : public Foo {
+ public:
+  SubFoo() {
+    printf("SubFoo init\n");
+  }
+
+  void print() override {
+
+    printf("--->SubFoo\n");
+
+  }
+
+  void show() override {
+    Foo::show();
+  }
+
+};
+
+int main() {
+
+  Foo *f = new SubFoo{};
+  f->print();
+  f->show();
+
+}
+
+
+
+####output
+D:\WK\cpp\cpp_feature_demo\cmake-build-debug\extends\test-extends.exe
+Foo init
+SubFoo init
+--->SubFoo
+--->SubFoo
+
+Process finished with exit code 0
+
+```
+
+
+
 # C++20
 
 ## concept
@@ -4667,5 +4752,86 @@ ua=4294967295
 
 Process finished with exit code 0
 
+```
+
+
+
+## 只能在Stack或Heap上创建的对象
+
+> 核心知识点：
+>
+> 1、在Stack上创建的对象，会自动调用析构函数
+>
+> 2、在Heap上创建的对象，需要使用new关键字创建，调用析构函数需要手动使用delete关键字
+>
+> 3、只要阻止对应的创建过程或者销毁过程，就能实现只能在Stack或Heap上创建的对象
+
+### 只能在Stack
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+
+
+class Foo {
+
+ public:
+  void *operator new(std::size_t count) = delete;   //方法1
+  void *operator new[](std::size_t count) = delete;
+
+// private:
+//  void *operator new(std::size_t count) {   //方法2
+//    return ::operator new(count);
+//  }
+//
+//  void *operator new[](std::size_t count) {
+//    return ::operator new[](count);
+//  }
+
+
+};
+
+
+int main() {
+
+  Foo foo{};
+//  Foo *pFoo = new Foo{};  //compile error
+
+}
+```
+
+### 只能在Heap
+
+```c++
+//
+// Created by ozcom on 2023/9/28.
+//
+
+#include <iostream>
+
+class Foo {
+
+ public:
+  ~Foo() = delete;  //方法1
+
+  void release() {
+    //recycle memory
+  }
+
+// private:
+//  ~Foo() = default;   //方法2
+
+};
+
+int main() {
+
+//  Foo foo{};  //compile error
+  Foo *pFoo = new Foo{};
+  pFoo->release();
+
+}
 ```
 

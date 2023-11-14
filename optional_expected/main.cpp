@@ -96,7 +96,7 @@ int main() {
       std::cout << "*res2=" << *res2 << std::endl;
     } else {
       //错误状态处理
-      std::cout << "res2 error handle, error code: " << static_cast<int>(res.error()) << std::endl;
+      std::cout << "res2 error handle, error code: " << static_cast<int>(res2.error()) << std::endl;
     }
 
   }

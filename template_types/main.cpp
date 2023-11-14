@@ -39,6 +39,52 @@ struct get_first_type<T> {
   using type = T;
 };
 
+inline void args(int v1) {
+  printf("args1i\n");
+}
+
+inline void args(int v1, int v2) {
+  printf("args2i\n");
+}
+
+inline void args(int v1, int v2, int v3) {
+  printf("args3i\n");
+}
+
+inline void args(int v1, int v2, int v3, int v4) {
+  printf("args4i\n");
+}
+
+inline void args(float v1) {
+  printf("args1f\n");
+}
+
+inline void args(float v1, float v2) {
+  printf("args2f\n");
+}
+
+inline void args(float v1, float v2, float v3) {
+  printf("args3f\n");
+}
+
+inline void args(float v1, float v2, float v3, float v4) {
+  printf("args4f\n");
+}
+
+inline void args(auto...) {
+  printf("大保底\n");
+}
+
+template<typename ...Tps>
+inline void setUniform(Tps  ...argv) {
+
+  using T = std::common_type_t<Tps...>;
+  int size = sizeof...(argv);
+
+  args(argv...);
+
+}
+
 int main() {
 
   if (auto ret = foo<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>()) {
@@ -50,4 +96,11 @@ int main() {
 
   std::cout << "\nsum = " << sum<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>::value;
   std::cout << "\nsum_t = " << sum_v<int, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0>;
+
+  std::cout << std::endl;
+
+  setUniform(1, 2, 3, 4);
+  setUniform(0.1f, 0.22f, 3.0f);
+  setUniform(0.1f, 0.22f, 3.0f, 1);
+
 }
